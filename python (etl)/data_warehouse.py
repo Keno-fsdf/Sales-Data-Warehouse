@@ -1,5 +1,7 @@
 import mysql.connector
-
+import pandas as pd
+import mysql.connector
+from sqlalchemy import create_engine
 
 
 #Methode um sich mit der Datenbank zu verbinden
@@ -7,7 +9,7 @@ def connect_to_db():
     return mysql.connector.connect(
         host="localhost",
         user="root",
-        password="Apfelkuchen",
+        password="Apfelkuchen"
     )
 
 
@@ -16,75 +18,10 @@ def connect_to_db():
 
 #Vielleicht noch "logging" nutzen anstatt simple print statements. Maybe irgendwann noch umändern, aber zunächst passt das so.
 
-#Erstellung der Datawarehoused (Datenbank) falls sie nicht existiert
-def create_data_warehouse(db, db_cursor):
+# Funktion, um automatisch die SQL-Tabelle basierend auf der CSV-Struktur zu erstellen
 
-    try:
-        db_cursor.execute("BEGIN")  #Nutzung von Transaktionen für Rollbacks bei Fehlern
 
-        # Datenbank erstellen und nutzen
-        db_cursor.execute("CREATE DATABASE IF NOT EXISTS RetailSalesDW")
-        db_cursor.execute("USE RetailSalesDW")
 
-        # Tabellen erstellen
-        table_queries = [
-            """
-            CREATE TABLE IF NOT EXISTS Kunden (
-                kunden_id INT AUTO_INCREMENT PRIMARY KEY,
-                name VARCHAR(255) NOT NULL,
-                email VARCHAR(255),
-                geburtsdatum DATE
-            )
-            """,
-            """
-            CREATE TABLE IF NOT EXISTS Produkte (
-                produkt_id INT AUTO_INCREMENT PRIMARY KEY,
-                name VARCHAR(255) NOT NULL,
-                kategorie VARCHAR(255),
-                preis DECIMAL(10,2)
-            )
-            """,
-            """
-            CREATE TABLE IF NOT EXISTS Filialen (
-                filial_id INT AUTO_INCREMENT PRIMARY KEY,
-                name VARCHAR(255) NOT NULL,
-                standort VARCHAR(255)
-            )
-            """,
-            """
-            CREATE TABLE IF NOT EXISTS Zeitraeume (
-                zeitraum_id INT AUTO_INCREMENT PRIMARY KEY,
-                monat INT NOT NULL,
-                jahr INT NOT NULL,
-                quartal INT
-            )
-            """,
-            """
-            CREATE TABLE IF NOT EXISTS Sales (
-                sales_id INT AUTO_INCREMENT PRIMARY KEY,
-                kunden_id INT,
-                produkt_id INT,
-                filial_id INT,
-                zeitraum_id INT,
-                anzahl INT,
-                gesamtbetrag DECIMAL(10,2),
-                FOREIGN KEY (kunden_id) REFERENCES Kunden(kunden_id) ON DELETE CASCADE,
-                FOREIGN KEY (produkt_id) REFERENCES Produkte(produkt_id) ON DELETE CASCADE,
-                FOREIGN KEY (filial_id) REFERENCES Filialen(filial_id) ON DELETE CASCADE,
-                FOREIGN KEY (zeitraum_id) REFERENCES Zeitraeume(zeitraum_id) ON DELETE CASCADE
-            )
-            """
-        ]
-
-        for query in table_queries:
-            db_cursor.execute(query)
-
-        db.commit()
-        print("Datenbank und Tabellen wurden erfolgreich erstellt.")
-
-    except Exception as e:
-        db.rollback()
-        print(f"Fehler beim Erstellen der Datenbank und Tabellen: {e}")
 
 
 #Methode zum setzten und prüfen des Isolationsgrad.
@@ -155,4 +92,4 @@ if __name__ == "__main__":
     with connect_to_db() as db:
         with db.cursor() as db_cursor:
             set_isolation_level(db, db_cursor, "SERIALIZABLE")  #Aufrufen der methoden um den isolationsgrad zu setzten udn danach das  data warehouse zu erstellen.
-            create_data_warehouse(db, db_cursor)
+            #create_data_warehouse(db, db_cursor)
