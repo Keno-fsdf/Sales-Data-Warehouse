@@ -2,7 +2,7 @@ import mysql.connector
 import pandas as pd
 import mysql.connector
 from sqlalchemy import create_engine
-
+import os
 
 #Methode um sich mit der Datenbank zu verbinden
 def connect_to_db():
@@ -19,6 +19,125 @@ def connect_to_db():
 #Vielleicht noch "logging" nutzen anstatt simple print statements. Maybe irgendwann noch umändern, aber zunächst passt das so.
 
 # Funktion, um automatisch die SQL-Tabelle basierend auf der CSV-Struktur zu erstellen
+
+
+
+
+
+
+
+
+
+
+# Funktion zur Bestimmung des SQL-Datentyps basierend auf dem Pandas-Datentyp
+def get_sql_datatype(dtype):
+    if pd.api.types.is_integer_dtype(dtype):    # Diese Zeile prüft, ob der Datentyp der Spalte ein ganzzahliger (integer) Typ ist, z.B. int64, int32 oder ähnliche Pandas-Typen.
+        return "INT"
+    elif pd.api.types.is_float_dtype(dtype):   #Diese Zeile prüft, ob der Datentyp der Spalte ein Fließkomma-Typ ist, z.B. float64, float32 usw.
+
+        return "FLOAT"
+    elif pd.api.types.is_datetime64_any_dtype(dtype):  #Diese Zeile prüft, ob der Datentyp der Spalte ein Datums- oder Zeitwert ist. Pandas unterstützt verschiedene Datums- und Zeittypen wie datetime64[ns], datetime64[ns, tz], timedelta64[ns] usw.
+        return "DATETIME"
+    else:
+        return "VARCHAR(255)" #Wenn keiner der obigen Tests zutrifft, geht der Code davon aus, dass der Datentyp der Spalte ein Textfeld ist.
+
+
+
+def create_data_warehouse(db, db_cursor, database_name):
+    """
+    Erstellt eine MySQL-Datenbank innerhalb einer Transaktion.
+    """
+    try:
+        db.start_transaction()  # Transaktion starten
+        db_cursor.execute(f"SHOW DATABASES LIKE '{database_name}'")
+        database_exists = db_cursor.fetchone()      #fetchone() holt genau eine Zeile aus den Ergebnissen des vorherigen execute()-Befehls.
+
+
+        if database_exists:    #Anmerkung nur an mich: Boah ich finde python teilweise so komisch, hier hat man ja nicht mal ein boolean und das geht trotzdem
+            print(f"ℹDie Datenbank '{database_name}' existiert bereits.")
+            db.rollback()  # Transaktion abbrechen, weil nichts geändert wurde
+        else:
+            db_cursor.execute(f"CREATE DATABASE {database_name}")
+            db.commit()  # Transaktion erfolgreich abschließen
+            print(f"Die Datenbank '{database_name}' wurde erfolgreich erstellt.")
+
+    except Exception as e:
+        db.rollback()  # Falls ein Fehler auftritt, Änderungen zurücksetzen
+        print(f"Fehler beim Erstellen der Datenbank '{database_name}': {e}")
+
+
+
+
+# Funktion, um automatisch eine Tabelle aus einer CSV-Datei zu erstellen
+def create_table_from_csv(csv_file,  db_cursor):
+
+    try: 
+        db.start_transaction()
+        # CSV-Datei einlesen
+        df = pd.read_csv(csv_file)
+
+
+        #Einlesen der Tabellen Bezeichnung durch die Dateibezeichnung.
+
+        table_name = os.path.splitext(os.path.basename(csv_file))[0] #gibt ein tupel zurück mit dateibezeichnung und dateiendung und somit nehmen ich dann nur den ersten teil mit "0"
+
+        # SQL-Statement für die Tabellenerstellung
+        create_table_sql = f"CREATE TABLE IF NOT EXISTS {table_name} ("
+        
+        # Spaltennamen und Datentypen dynamisch bestimmen
+        for column in df.columns:
+            column_type = get_sql_datatype(df[column])  # Bestimme den SQL-Datentyp
+            create_table_sql += f"{column} {column_type}, "
+
+        # Entferne das letzte Komma und schließe die Klammer
+        create_table_sql = create_table_sql.rstrip(", ") + ")"
+
+        # SQL-Statement ausführen
+        db_cursor.execute(create_table_sql)
+        db.commit()
+        print(f"Tabelle '{table_name}' erfolgreich erstellt.")
+    except Exception as e:
+        db.rollback()  # Falls ein Fehler auftritt, Änderungen zurücksetzen
+        print("Fehler bei der Erstellung der Tabellen aufgetreten")
+        print(e)
+
+
+
+
+
+
+
+# Funktion zum Importieren von CSV-Dateien in die Datenbank
+def import_csv_to_db(csv_file, db_cursor):
+    try:
+        db.start_transaction()  # Transaktion starten
+    
+        # Einlesen der Tabellenbezeichnung durch die Dateibezeichnung
+        table_name = os.path.splitext(os.path.basename(csv_file))[0]
+
+        df = pd.read_csv(csv_file)
+            
+            # Daten an die MySQL-Datenbank anhängen (die Tabelle wird nicht ersetzt)
+        for index, row in df.iterrows():
+            # Erstelle ein SQL-Statement zum Einfügen der Daten
+            columns = ", ".join(df.columns)
+            values = ", ".join([f"'{str(value)}'" for value in row.values])
+            insert_sql = f"INSERT INTO {table_name} ({columns}) VALUES ({values})"
+
+            # Einfügen der Daten in die Tabelle
+            db_cursor.execute(insert_sql)
+
+
+        # Transaktion erfolgreich abschließen
+        db.commit()
+        print(f"Daten in die Tabelle '{table_name}' erfolgreich eingefügt.")
+    except Exception as e:
+        # Falls ein Fehler auftritt, Änderungen zurücksetzen
+        db.rollback()
+        print(f"Fehler beim Importieren der Tabelle '{table_name}': {e}")
+
+
+
 
 
 
@@ -74,6 +193,8 @@ def fetch_table_data(table_name):
 
 
 
+
+
 # Hauptprogramm
 """
 if __name__ == "__main__": sorgt dafür, dass dieses Skript nur dann ausgeführt wird,  
@@ -88,8 +209,29 @@ Also immer schön das benutzen damit ich nicht irgendwelche offenen Ressourcen h
 Also anscheinend definiert das ein Kontextmanager mit den Methoden "__enter__()" und "__exit__()"
 
 """
+
+
 if __name__ == "__main__":   
     with connect_to_db() as db:
         with db.cursor() as db_cursor:
             set_isolation_level(db, db_cursor, "SERIALIZABLE")  #Aufrufen der methoden um den isolationsgrad zu setzten udn danach das  data warehouse zu erstellen.
-            #create_data_warehouse(db, db_cursor)
+            create_data_warehouse(db, db_cursor, "retailsalesdw")
+            db_cursor.execute("USE retailsalesdw")
+
+
+
+
+
+            """   
+            create_table_from_csv(r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\aisles.csv", db_cursor)
+            create_table_from_csv(r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\departments.csv", db_cursor)
+            create_table_from_csv(r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\order_products__train.csv", db_cursor)
+            create_table_from_csv(r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\order_products__prior.csv", db_cursor)
+            create_table_from_csv(r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\orders.csv", db_cursor)
+            create_table_from_csv(r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\products.csv", db_cursor)
+
+            import_csv_to_db(r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\aisles.csv", db_cursor)
+         """
+
+
+
