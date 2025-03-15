@@ -116,7 +116,8 @@ def import_csv_to_db(csv_file, db_cursor):
         table_name = os.path.splitext(os.path.basename(csv_file))[0]
 
         df = pd.read_csv(csv_file)
-         # Ersetze NaN-Werte mit NULL (besonders wichtig für Spalten wie days_since_prior_order, weil davor dort ein fehler aufgetreten ist , denke ich deswegen, aber noch nicht 100% sicher)
+        #Ersetze NaN-Werte mit NULL (besonders wichtig für Spalten wie days_since_prior_order, weil davor dort ein fehler aufgetreten ist , denke ich deswegen, aber noch nicht 100% sicher)
+        #DASS FOLGENDE ENTKOMMENTIEREN
         #df = df.where(pd.notnull(df), None)
 
             
@@ -127,7 +128,8 @@ def import_csv_to_db(csv_file, db_cursor):
             
             
             columns = ", ".join(df.columns)  
-            values = ", ".join([f"'{str(value)}'" for value in row.values])  #Problem: Bob's Mash wird zu 'Bob's Mash', was ein Syntaxfehler in SQL ist.
+            values = ", ".join([f"'{str(value)}'" for value in row.values])  #Problem: Bob's Mash wird zu 'Bob's Mash', was ein Syntaxfehler in SQL ist. 
+            #UM DAS PROBLEM DARÜBER KÜMMERN IM KOMMENTAR
 
 
 
