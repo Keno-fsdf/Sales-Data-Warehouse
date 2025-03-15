@@ -26,4 +26,9 @@ def download_kaggle_data(dataset_name, download_path='./data', target_path=r'C:\
     print(f"Dateien nach {target_path} verschoben.")
 
 # Dataset herunterladen und verschieben
-download_kaggle_data('psparks/instacart-market-basket-analysis')
+
+sicherheitsmechanismus = input("Gebe 'Confirm' ein, um das erneute Herunterladen zu bestätigen: ")
+
+if sicherheitsmechanismus == "Confirm":
+    download_kaggle_data('psparks/instacart-market-basket-analysis')
+

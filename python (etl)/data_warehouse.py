@@ -116,12 +116,21 @@ def import_csv_to_db(csv_file, db_cursor):
         table_name = os.path.splitext(os.path.basename(csv_file))[0]
 
         df = pd.read_csv(csv_file)
+         # Ersetze NaN-Werte mit NULL (besonders wichtig für Spalten wie days_since_prior_order, weil davor dort ein fehler aufgetreten ist , denke ich deswegen, aber noch nicht 100% sicher)
+        #df = df.where(pd.notnull(df), None)
+
             
             # Daten an die MySQL-Datenbank anhängen (die Tabelle wird nicht ersetzt)
         for index, row in df.iterrows():
             # Erstelle ein SQL-Statement zum Einfügen der Daten
-            columns = ", ".join(df.columns)
-            values = ", ".join([f"'{str(value)}'" for value in row.values])
+            
+            
+            
+            columns = ", ".join(df.columns)  
+            values = ", ".join([f"'{str(value)}'" for value in row.values])  #Problem: Bob's Mash wird zu 'Bob's Mash', was ein Syntaxfehler in SQL ist.
+
+
+
             insert_sql = f"INSERT INTO {table_name} ({columns}) VALUES ({values})"
 
             # Einfügen der Daten in die Tabelle
@@ -218,20 +227,29 @@ if __name__ == "__main__":
             create_data_warehouse(db, db_cursor, "retailsalesdw")
             db_cursor.execute("USE retailsalesdw")
 
+            # Liste der CSV-Dateien, die du importieren möchtest
+            csv_files = [
+            r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\aisles.csv",
+            r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\departments.csv",
+            r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\order_products__train.csv",
+            r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\order_products__prior.csv",
+            r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\orders.csv",
+            r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\products.csv"
+                ]    
+            # Für jede CSV-Datei erstellen und importieren
+            for csv_file in csv_files:
+                try:
+                    # Zuerst die Tabelle aus der CSV-Datei erstellen
+                    create_table_from_csv(csv_file, db_cursor)
+
+                    # Dann die Daten in die Tabelle importieren
+                    import_csv_to_db(csv_file, db_cursor)
+
+                except Exception as e:
+                    print(f"Fehler bei der Verarbeitung der Datei {csv_file}: {e}")
 
 
 
-
-            """   
-            create_table_from_csv(r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\aisles.csv", db_cursor)
-            create_table_from_csv(r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\departments.csv", db_cursor)
-            create_table_from_csv(r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\order_products__train.csv", db_cursor)
-            create_table_from_csv(r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\order_products__prior.csv", db_cursor)
-            create_table_from_csv(r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\orders.csv", db_cursor)
-            create_table_from_csv(r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\products.csv", db_cursor)
-
-            import_csv_to_db(r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\aisles.csv", db_cursor)
-         """
 
 
 
