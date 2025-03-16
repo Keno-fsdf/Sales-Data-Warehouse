@@ -105,49 +105,36 @@ def create_table_from_csv(csv_file,  db_cursor):
 
 
 
+#Funktion zum Importieren von CSV-Dateien in die Datenbank
+#Problem mit NaN und Problem -Bob's Mash wird zu 'Bob's Mash', was ein Syntaxfehler in SQL ist- behoben
 
-
-# Funktion zum Importieren von CSV-Dateien in die Datenbank
 def import_csv_to_db(csv_file, db_cursor):
     try:
         db.start_transaction()  # Transaktion starten
-    
-        # Einlesen der Tabellenbezeichnung durch die Dateibezeichnung
+
+        # Tabellenname aus Dateinamen extrahieren
         table_name = os.path.splitext(os.path.basename(csv_file))[0]
 
-        df = pd.read_csv(csv_file)
-        #Ersetze NaN-Werte mit NULL (besonders wichtig für Spalten wie days_since_prior_order, weil davor dort ein fehler aufgetreten ist , denke ich deswegen, aber noch nicht 100% sicher)
-        #DASS FOLGENDE ENTKOMMENTIEREN
-        #df = df.where(pd.notnull(df), None)
+        df = pd.read_csv(csv_file)   #Ladt die daten in DataFrames  -->Dadurch enstehen "NaN, wenn irgendwo kein wert vorhanden ist"
+        df = df.where(pd.notnull(df), None) #Ersetzt alle NaN-Werte durch None, damit MySQL sie als NULL erkennt
 
-            
-            # Daten an die MySQL-Datenbank anhängen (die Tabelle wird nicht ersetzt)
-        for index, row in df.iterrows():
-            # Erstelle ein SQL-Statement zum Einfügen der Daten
-            
-            
-            
-            columns = ", ".join(df.columns)  
-            values = ", ".join([f"'{str(value)}'" for value in row.values])  #Problem: Bob's Mash wird zu 'Bob's Mash', was ein Syntaxfehler in SQL ist. 
-            #UM DAS PROBLEM DARÜBER KÜMMERN IM KOMMENTAR
+        # SQL-Statement mit Platzhaltern
+        columns = ", ".join(f"`{col}`" for col in df.columns)  # "id", "name", "price" -->Wird zu `id`, `name`, `price`. -->Das verhindert gewisse probleme
+        placeholders = ", ".join(["%s"] * len(df.columns))  # Platzhalter für Werte
+        insert_sql = f"INSERT INTO `{table_name}` ({columns}) VALUES ({placeholders})"  #baut das sql statement zusammen
 
+        # Daten einfügen
+        for _, row in df.iterrows():  # Iteriere über jede Zeile im DataFrame
+            values = tuple(None if pd.isna(val) else val for val in row.values)  # NaN -> NULL
+            # Führe das SQL-Insert-Statement aus und füge die Werte in die Datenbank ein
+            db_cursor.execute(insert_sql, values)  
 
-
-            insert_sql = f"INSERT INTO {table_name} ({columns}) VALUES ({values})"
-
-            # Einfügen der Daten in die Tabelle
-            db_cursor.execute(insert_sql)
-
-
-        # Transaktion erfolgreich abschließen
+        # Transaktion abschließen
         db.commit()
         print(f"Daten in die Tabelle '{table_name}' erfolgreich eingefügt.")
     except Exception as e:
-        # Falls ein Fehler auftritt, Änderungen zurücksetzen
         db.rollback()
         print(f"Fehler beim Importieren der Tabelle '{table_name}': {e}")
-
-
 
 
 
@@ -231,11 +218,11 @@ if __name__ == "__main__":
 
             # Liste der CSV-Dateien, die du importieren möchtest
             csv_files = [
-            r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\aisles.csv",
-            r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\departments.csv",
-            r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\order_products__train.csv",
-            r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\order_products__prior.csv",
-            r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\orders.csv",
+            #r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\aisles.csv",
+            #r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\departments.csv",
+            #r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\order_products__train.csv",
+            #r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\order_products__prior.csv",
+            #r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\orders.csv",
             r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\products.csv"
                 ]    
             # Für jede CSV-Datei erstellen und importieren
