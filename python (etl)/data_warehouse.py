@@ -118,6 +118,29 @@ def import_csv_to_db(csv_file, db_cursor):
         df = pd.read_csv(csv_file)   #Ladt die daten in DataFrames  -->Dadurch enstehen "NaN, wenn irgendwo kein wert vorhanden ist"
         df = df.where(pd.notnull(df), None) #Ersetzt alle NaN-Werte durch None, damit MySQL sie als NULL erkennt
 
+
+
+        #FIX für: "Python type numpy.int64 cannot be converted"
+
+        # Bestimme die SQL-Datentypen und konvertiere die Spalten entsprechend
+        column_types = {col: get_sql_datatype(df[col].dtype) for col in df.columns}
+
+
+        #ALSO ES SCHEINT ZU FUNKTIONIEREN, aber ich hab irgendwie kein plan wieso lol
+        for col, sql_dtype in column_types.items():
+            if sql_dtype == "INT":
+                # Ändere den Datentyp zu int64 (statt int32)
+                df[col] = df[col].astype('Int64', errors='ignore')  # Sicherstellung von int64
+            elif sql_dtype == "FLOAT":
+                # Ändere den Datentyp zu float64
+                df[col] = df[col].astype('float64', errors='ignore')  # Sicherstellung von float64
+            elif sql_dtype == "DATETIME":
+                # Wandle die Spalte in Datetime um (im Fehlerfall wird "coerce" verwendet, d.h. ungültige Werte werden zu NaT)
+                df[col] = pd.to_datetime(df[col], errors="coerce")
+        
+        
+
+
         # SQL-Statement mit Platzhaltern
         columns = ", ".join(f"`{col}`" for col in df.columns)  # "id", "name", "price" -->Wird zu `id`, `name`, `price`. -->Das verhindert gewisse probleme
         placeholders = ", ".join(["%s"] * len(df.columns))  # Platzhalter für Werte
@@ -218,11 +241,11 @@ if __name__ == "__main__":
 
             # Liste der CSV-Dateien, die du importieren möchtest
             csv_files = [
-            #r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\aisles.csv",
-            #r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\departments.csv",
-            #r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\order_products__train.csv",
-            #r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\order_products__prior.csv",
-            #r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\orders.csv",
+            r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\aisles.csv",
+            r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\departments.csv",
+            r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\order_products__train.csv",
+            r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\order_products__prior.csv",
+            r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\orders.csv",
             r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\products.csv"
                 ]    
             # Für jede CSV-Datei erstellen und importieren
