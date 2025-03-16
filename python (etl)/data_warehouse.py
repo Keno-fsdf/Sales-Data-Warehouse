@@ -12,7 +12,7 @@ def connect_to_db():
         password="Apfelkuchen"
     )
 
-
+#DocStrings kann ich noch hhinzufügen wenn ich das will mal
 
 #ANMERKUNG zu den SQL Statement. Da es sich lediglich um ein lokal genutzes Data-Warehouse handelt, sind SQL-Injektion Angriffe nicht wirklich relevant und somit hab ich auch direkte SQL-Statements benutzt aus Komfort
 
@@ -20,7 +20,7 @@ def connect_to_db():
 
 # Funktion, um automatisch die SQL-Tabelle basierend auf der CSV-Struktur zu erstellen
 
-
+#
 
 
 
@@ -232,35 +232,38 @@ Also anscheinend definiert das ein Kontextmanager mit den Methoden "__enter__()"
 """
 
 
-if __name__ == "__main__":   
-    with connect_to_db() as db:
-        with db.cursor() as db_cursor:
-            set_isolation_level(db, db_cursor, "SERIALIZABLE")  #Aufrufen der methoden um den isolationsgrad zu setzten udn danach das  data warehouse zu erstellen.
-            create_data_warehouse(db, db_cursor, "retailsalesdw")
-            db_cursor.execute("USE retailsalesdw")
+confirm_string = input("Bestätige, dass du das Data Warehouse erneut erstellen willst (Ja/Nein): ")
 
-            # Liste der CSV-Dateien, die du importieren möchtest
-            csv_files = [
-            r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\aisles.csv",
-            r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\departments.csv",
-            r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\order_products__train.csv",
-            r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\order_products__prior.csv",
-            r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\orders.csv",
-            r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\products.csv"
-                ]    
-            # Für jede CSV-Datei erstellen und importieren
-            for csv_file in csv_files:
-                try:
-                    # Zuerst die Tabelle aus der CSV-Datei erstellen
-                    create_table_from_csv(csv_file, db_cursor)
+if confirm_string.lower() == "ja":
+    if __name__ == "__main__":   
+        with connect_to_db() as db:
+            with db.cursor() as db_cursor:
+                set_isolation_level(db, db_cursor, "SERIALIZABLE")  #Aufrufen der methoden um den isolationsgrad zu setzten udn danach das  data warehouse zu erstellen.
+                create_data_warehouse(db, db_cursor, "retailsalesdw")
+                db_cursor.execute("USE retailsalesdw")
 
-                    # Dann die Daten in die Tabelle importieren
-                    import_csv_to_db(csv_file, db_cursor)
+                # Liste der CSV-Dateien, die du importieren möchtest
+                csv_files = [
+                r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\aisles.csv",
+                r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\departments.csv",
+                r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\order_products__train.csv",
+                r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\order_products__prior.csv",
+                r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\orders.csv",
+                r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\products.csv"
+                    ]    
+                # Für jede CSV-Datei erstellen und importieren
+                for csv_file in csv_files:
+                    try:
+                        # Zuerst die Tabelle aus der CSV-Datei erstellen
+                        create_table_from_csv(csv_file, db_cursor)
 
-                except Exception as e:
-                    print(f"Fehler bei der Verarbeitung der Datei {csv_file}: {e}")
+                        # Dann die Daten in die Tabelle importieren
+                        import_csv_to_db(csv_file, db_cursor)
 
-
+                    except Exception as e:
+                        print(f"Fehler bei der Verarbeitung der Datei {csv_file}: {e}")
+else:
+    print("Der Vorgang wurde abgebrochen.")
 
 
 
