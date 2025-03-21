@@ -298,6 +298,6 @@ def finaleErstellungWarehouse():
     else:
         print("Der Vorgang wurde abgebrochen.")
 
-
-finaleErstellungWarehouse()
+if __name__ == "__main__":       #das is sehr wichtig, weil sonst ein import dieses skriptes bei einem anderen skript automatisch in python dieses auslöst, sofern der code nicht in funktionen ist.
+    finaleErstellungWarehouse()
 

@@ -2,12 +2,15 @@ import pandas as pd
 from gensim.models import Word2Vec
 #from data_warehouse import fetch_table_data, connect_to_db  # Importiere die Methoden aus deiner Datei
 import data_warehouse
-print ("Fettsack")
+
+
+
+
 
 # Einkaufshistorie abrufen
-def get_purchase_history():
-    table_name = "order_products__prior"
-    data = data_warehouse.fetch_table_data(table_name)  # Holt die Datenbank-Tabelle als Pandas DataFrame
+def get_purchase_history(db_cursor, table_name):
+    #table_name = "order_products__prior"
+    data = data_warehouse.fetch_table_data(db_cursor, table_name)  # Holt die Datenbank-Tabelle als Pandas DataFrame
 
     if data is None or data.empty:
         print("Keine Daten gefunden")
@@ -44,16 +47,24 @@ def find_similar_products(model, product_id, topn=5):
     except KeyError:
         return f"Produkt-ID {product_id} nicht im Modell gefunden."
 
+
 # Hauptprogramm
 if __name__ == "__main__":
+    # Mit der Datenbank verbinden und den Cursor verwenden
     print("Lade Einkaufsdaten aus der Datenbank über data_warehouse.py...")
-    purchase_history = get_purchase_history()
 
-    if purchase_history:
-        print("Trainiere Word2Vec-Modell...")
-        model = train_word2vec(purchase_history)
+    # Verbindung und Cursor im with-Block öffnen
+    with data_warehouse.connect_to_db() as db:  # Verbindung zur DB
+        with db.cursor() as db_cursor:  # Cursor verwenden
+            # Holen der Einkaufsdaten
+            db_cursor.execute("USE retailsalesdw")
+            purchase_history = get_purchase_history(db_cursor, "order_products__prior")
 
-        # Beispiel: Ähnliche Produkte für Produkt-ID 24852 (Bananas)
-        product_id = 24852  
-        print(f"Ähnliche Produkte zu {product_id}:")
-        print(find_similar_products(model, product_id))
+            if purchase_history:
+                print("Trainiere Word2Vec-Modell...")
+                model = train_word2vec(purchase_history)
+
+                # Beispiel: Ähnliche Produkte für Produkt-ID 24852 (Bananas)
+                product_id = 24852
+                print(f"Ähnliche Produkte zu {product_id}:")
+                print(find_similar_products(model, product_id))
