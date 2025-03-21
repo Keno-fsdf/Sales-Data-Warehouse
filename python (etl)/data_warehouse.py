@@ -9,13 +9,39 @@ import os
 
 #KURZE ANMERKUNG AN MICH SELBER: wenn ich das irgendwann auf meinem laptop nutzen will, dann muss ich auc eine .env datei erstellen mit dem gleichen inhalt und eben alles was in gitignore drin ist beachten.  
 
+
+# Lädt die Umgebungsvariablen aus der .env-Datei
+load_dotenv()
+# Verbindungsdetails aus den Umgebungsvariablen
+db_host = os.getenv("DB_HOST")
+print(db_host)
+db_user = os.getenv("DB_USER")
+db_password = os.getenv("DB_PASSWORD")
+
+
+#ich weiß es ist bad practices wie man hier die daten sieht. Aber weil es nichts sensibles ist und nur eine schwachstelle aber keine verwundbarkeit ist, ist es kurzfristig akzeptabel, bis ich das mit problem mit meinen env datein herausgefunden habe.
 #Methode um sich mit der Datenbank zu verbinden
 def connect_to_db():
     return mysql.connector.connect(
-        host="localhost",
+        host= "localhost",
         user="root",
         password="Apfelkuchen"
     )
+
+
+"""
+# Methode um sich mit der Datenbank zu verbinden
+def connect_to_db():
+    return mysql.connector.connect(
+        
+        host=db_host,
+        user=db_user,
+        password=db_password
+    )
+"""
+
+
+
 
 #DocStrings kann ich noch hhinzufügen wenn ich das will mal
 
