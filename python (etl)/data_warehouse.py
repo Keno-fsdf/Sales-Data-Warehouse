@@ -2,7 +2,12 @@ import mysql.connector
 import pandas as pd
 import mysql.connector
 from sqlalchemy import create_engine
+from dotenv import load_dotenv
 import os
+
+
+
+#KURZE ANMERKUNG AN MICH SELBER: wenn ich das irgendwann auf meinem laptop nutzen will, dann muss ich auc eine .env datei erstellen mit dem gleichen inhalt und eben alles was in gitignore drin ist beachten.  
 
 #Methode um sich mit der Datenbank zu verbinden
 def connect_to_db():
@@ -19,14 +24,6 @@ def connect_to_db():
 #Vielleicht noch "logging" nutzen anstatt simple print statements. Maybe irgendwann noch umändern, aber zunächst passt das so.
 
 # Funktion, um automatisch die SQL-Tabelle basierend auf der CSV-Struktur zu erstellen
-
-#
-
-
-
-
-
-
 
 
 # Funktion zur Bestimmung des SQL-Datentyps basierend auf dem Pandas-Datentyp
@@ -69,7 +66,7 @@ def create_data_warehouse(db, db_cursor, database_name):
 
 
 # Funktion, um automatisch eine Tabelle aus einer CSV-Datei zu erstellen
-def create_table_from_csv(csv_file,  db_cursor):
+def create_table_from_csv(db, csv_file,  db_cursor):
 
     try: 
         db.start_transaction()
@@ -108,7 +105,7 @@ def create_table_from_csv(csv_file,  db_cursor):
 #Funktion zum Importieren von CSV-Dateien in die Datenbank
 #Problem mit NaN und Problem -Bob's Mash wird zu 'Bob's Mash', was ein Syntaxfehler in SQL ist- behoben
 
-def import_csv_to_db(csv_file, db_cursor):
+def import_csv_to_db(db, csv_file, db_cursor):
     try:
         db.start_transaction()  # Transaktion starten
 
@@ -188,7 +185,7 @@ def exists(db_cursor, query, params):
 
 # Funktion zum Abrufen und Anzeigen der Tabelleninhalte mit Attributen
 #WICHTIG: Ich nutzte jetzt hier keine Transakion, da es nur ein Select statement ist und ich das risiko von dirty reads jetzt hier eingehe!!!
-def fetch_table_data(table_name):
+def fetch_table_data(db_cursor, table_name):
     query = f"SELECT * FROM {table_name}"
     db_cursor.execute(query)
 
@@ -208,14 +205,6 @@ def fetch_table_data(table_name):
         print(" | ".join(str(x) for x in row))
 
 
-
-
-
-
-
-
-
-
 # Hauptprogramm
 """
 if __name__ == "__main__": sorgt dafür, dass dieses Skript nur dann ausgeführt wird,  
@@ -232,39 +221,57 @@ Also anscheinend definiert das ein Kontextmanager mit den Methoden "__enter__()"
 """
 
 
-confirm_string = input("Bestätige, dass du das Data Warehouse erneut erstellen willst (Ja/Nein): ")
+#Bei gelegenheit noch das als funktion mit transaktion machen.
+#noch so umändern dass keine duplikate erstlelt werden an tabellen
 
-if confirm_string.lower() == "ja":
-    if __name__ == "__main__":   
-        with connect_to_db() as db:
-            with db.cursor() as db_cursor:
-                set_isolation_level(db, db_cursor, "SERIALIZABLE")  #Aufrufen der methoden um den isolationsgrad zu setzten udn danach das  data warehouse zu erstellen.
-                create_data_warehouse(db, db_cursor, "retailsalesdw")
-                db_cursor.execute("USE retailsalesdw")
+#Dann noch ein autodrop von der datenbank machen wenn man auf ja drückt
 
-                # Liste der CSV-Dateien, die du importieren möchtest
-                csv_files = [
-                r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\aisles.csv",
-                r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\departments.csv",
-                r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\order_products__train.csv",
-                r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\order_products__prior.csv",
-                r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\orders.csv",
-                r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\products.csv"
-                    ]    
-                # Für jede CSV-Datei erstellen und importieren
-                for csv_file in csv_files:
-                    try:
-                        # Zuerst die Tabelle aus der CSV-Datei erstellen
-                        create_table_from_csv(csv_file, db_cursor)
+def finaleErstellungWarehouse():
 
-                        # Dann die Daten in die Tabelle importieren
-                        import_csv_to_db(csv_file, db_cursor)
+    confirm_string = input("Bestätige, dass du das Data Warehouse erstellen willst (Ja/Nein): ")
 
+    if confirm_string.lower() == "ja":
+        if __name__ == "__main__":   
+            with connect_to_db() as db:
+                with db.cursor() as db_cursor:
+                    set_isolation_level(db, db_cursor, "SERIALIZABLE")  #Aufrufen der methoden um den isolationsgrad zu setzten udn danach das  data warehouse zu erstellen.
+                    try: 
+                        db.start_transaction()
+
+                        db_cursor.execute("Drop database retailsalesdw")
+                        create_data_warehouse(db, db_cursor, "retailsalesdw")
+                        db_cursor.execute("USE retailsalesdw")
+
+                        # Liste der CSV-Dateien, die du importieren möchtest
+                        csv_files = [
+                        r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\aisles.csv",
+                        r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\departments.csv",
+                        r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\order_products__train.csv",
+                        r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\order_products__prior.csv",
+                        r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\orders.csv",
+                        r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\products.csv"
+                            ]    
+                        # Für jede CSV-Datei erstellen und importieren
+                        for csv_file in csv_files:
+                            
+                                # Zuerst die Tabelle aus der CSV-Datei erstellen
+                                create_table_from_csv(db, csv_file, db_cursor)
+
+                                # Dann die Daten in die Tabelle importieren
+                                import_csv_to_db(db, csv_file, db_cursor)
+
+                            
+                        
+                         
+                        db.commit()
+                        print("Data Warehouse erfolgreich erstellt")
                     except Exception as e:
-                        print(f"Fehler bei der Verarbeitung der Datei {csv_file}: {e}")
-else:
-    print("Der Vorgang wurde abgebrochen.")
+                        print(e)
+                        db.rollback()
+                        print(f"Fehler beim Erstellen des Data Warehouses: {e}")
+    else:
+        print("Der Vorgang wurde abgebrochen.")
 
 
-
+finaleErstellungWarehouse()
 
