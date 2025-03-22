@@ -214,22 +214,26 @@ def exists(db_cursor, query, params):
 def fetch_table_data(db_cursor, table_name):
     query = f"SELECT * FROM {table_name}"
     db_cursor.execute(query)
-
+    
     # Spaltennamen abrufen
     column_names = [i[0] for i in db_cursor.description]
+    
+    # Daten abrufen (hier fetchmany für 50 Zeilen, du kannst auch fetchall verwenden)
+    rows = db_cursor.fetchmany(15) #jetzt wieder erstmal nur 10
+    
+    # Wenn keine Daten vorhanden sind, gib eine leere DataFrame zurück
+    if not rows:
+        print(f"Keine Daten in der Tabelle '{table_name}' gefunden.")
+        return pd.DataFrame()
 
-    # Daten abrufen
-    rows = db_cursor.fetchall()
-
-    # Tabellenüberschrift ausgeben
+    # Konvertiere die Zeilen in ein Pandas DataFrame
+    df = pd.DataFrame(rows, columns=column_names)
+    
+    # Optional: Gebe einen Teil der Daten zum Testen aus
     print(f"\nInhalt der Tabelle '{table_name}':")
-    print(" | ".join(column_names))  # Spaltennamen anzeigen
-    print("-" * 50)
-
-    # Datenzeilen ausgeben
-    for row in rows:
-        print(" | ".join(str(x) for x in row))
-
+    print(df.head())  # Zeigt die ersten paar Zeilen des DataFrames an
+    
+    return df
 
 # Hauptprogramm
 """
