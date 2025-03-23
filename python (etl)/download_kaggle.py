@@ -5,7 +5,7 @@ import kaggle
 def download_kaggle_data(dataset_name, download_path='./data', target_path=r'C:\Users\Keno\Desktop\Sales-Data-Warehouse'):
     """Lädt ein Dataset von Kaggle herunter, entpackt es und verschiebt es in das Zielverzeichnis."""
 
-    # Sicherstellen, dass der Zielordner für den Download existiert
+    #Sicherstellen, dass der Zielordner für den Download existiert
     if not os.path.exists(download_path):
         os.makedirs(download_path)
 
@@ -13,7 +13,7 @@ def download_kaggle_data(dataset_name, download_path='./data', target_path=r'C:\
     kaggle.api.dataset_download_files(dataset_name, path=download_path, unzip=True)
     print(f"Dataset '{dataset_name}' erfolgreich heruntergeladen nach {download_path}")
 
-    # Sicherstellen, dass das Zielverzeichnis existiert
+    #Sicherstellen, dass das Zielverzeichnis existiert
     if not os.path.exists(target_path):
         os.makedirs(target_path)
 
@@ -26,7 +26,6 @@ def download_kaggle_data(dataset_name, download_path='./data', target_path=r'C:\
     print(f"Dateien nach {target_path} verschoben.")
 
 # Dataset herunterladen und verschieben
-
 sicherheitsmechanismus = input("Gebe 'Confirm' ein, um das erneute Herunterladen zu bestätigen: ")
 
 if sicherheitsmechanismus == "Confirm":

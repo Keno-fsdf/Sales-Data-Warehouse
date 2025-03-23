@@ -115,7 +115,7 @@ def create_table_from_csv(db, csv_file,  db_cursor):
         # Entferne das letzte Komma und schließe die Klammer
         create_table_sql = create_table_sql.rstrip(", ") + ")"
 
-        # SQL-Statement ausführen
+        # SQL Statement ausführen
         db_cursor.execute(create_table_sql)
         db.commit()
         print(f"Tabelle '{table_name}' erfolgreich erstellt.")
@@ -145,7 +145,7 @@ def import_csv_to_db(db, csv_file, db_cursor):
 
         #FIX für: "Python type numpy.int64 cannot be converted"
 
-        # Bestimme die SQL-Datentypen und konvertiere die Spalten entsprechend
+        # Bestimme die SQL Datentypen und konvertiere die Spalten entsprechend
         column_types = {col: get_sql_datatype(df[col].dtype) for col in df.columns}
 
 
@@ -164,7 +164,7 @@ def import_csv_to_db(db, csv_file, db_cursor):
         
 
 
-        # SQL-Statement mit Platzhaltern
+        # SQL Statement mit Platzhaltern
         columns = ", ".join(f"`{col}`" for col in df.columns)  # "id", "name", "price" -->Wird zu `id`, `name`, `price`. -->Das verhindert gewisse probleme
         placeholders = ", ".join(["%s"] * len(df.columns))  # Platzhalter für Werte
         insert_sql = f"INSERT INTO `{table_name}` ({columns}) VALUES ({placeholders})"  #baut das sql statement zusammen
@@ -219,7 +219,7 @@ def fetch_table_data(db_cursor, table_name):
     column_names = [i[0] for i in db_cursor.description]
     
     # Daten abrufen (hier fetchmany für 50 Zeilen, du kannst auch fetchall verwenden)
-    rows = db_cursor.fetchmany(15) #jetzt wieder erstmal nur 10
+    rows = db_cursor.fetchall() #jetzt wieder erstmal nur 10
     
     # Wenn keine Daten vorhanden sind, gib eine leere DataFrame zurück
     if not rows:
@@ -272,7 +272,7 @@ def finaleErstellungWarehouse():
                         create_data_warehouse(db, db_cursor, "retailsalesdw")
                         db_cursor.execute("USE retailsalesdw")
 
-                        # Liste der CSV-Dateien, die du importieren möchtest
+                        # Liste der CSV-Dateien
                         csv_files = [
                         r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\aisles.csv",
                         r"C:\Users\Keno\Desktop\Sales-Data-Warehouse\departments.csv",
