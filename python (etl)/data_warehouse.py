@@ -19,17 +19,7 @@ db_user = os.getenv("DB_USER")
 db_password = os.getenv("DB_PASSWORD")
 
 
-#ich weiß es ist bad practices wie man hier die daten sieht. Aber weil es nichts sensibles ist und nur eine schwachstelle aber keine verwundbarkeit ist, ist es kurzfristig akzeptabel, bis ich das mit problem mit meinen env datein herausgefunden habe.
-#Methode um sich mit der Datenbank zu verbinden
-def connect_to_db():
-    return mysql.connector.connect(
-        host= "localhost",
-        user="root",
-        password="Apfelkuchen"
-    )
 
-
-"""
 # Methode um sich mit der Datenbank zu verbinden
 def connect_to_db():
     return mysql.connector.connect(
@@ -38,7 +28,7 @@ def connect_to_db():
         user=db_user,
         password=db_password
     )
-"""
+
 
 
 
