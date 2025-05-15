@@ -14,12 +14,4 @@ Import von CSV-Daten in die Datenbank
 
 Transaktionsmanagement mit Rollback bei Fehlern
 
-
-WAS NOCH KOMMEN SOLL:
-Lift/Confidence/Support ausrechnen und Apriori Algorithmus
-
-Richtiges Transportverfahren, sodass ETL vollständig umgesetzt ist
-
-Nutzung von Word2Vec
-
-Vielleicht noch Logging implementieren
+Lift/Confidence/Support ausrechnen 
